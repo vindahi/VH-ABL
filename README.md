@@ -1,23 +1,13 @@
 # HIAMH
 
-**Higher Bit, Mightier Clout: Hierarchical Importance-Aware Multi-modal Hashing**
+**Beyond Fixed-Length Constraints: Variable-length Hashing via Adaptive Bit-importance Learning for Multi-modal Retrieval**
 
 ---
 
 ## Overview
 
-`HIAMH` proposes a novel **Hierarchical Importance-Aware Multi-modal Hashing** method for efficient multi-modal data retrieval. The method leverages hierarchical importance modeling to generate high-quality hash codes that capture significant features across modalities. It has been validated on various benchmark datasets, demonstrating superior performance in terms of retrieval accuracy and efficiency.
+**Beyond Fixed-Length Constraints: Variable-length Hashing via Adaptive Bit-importance Learning for Multi-modal Retrieval** method for efficient multi-modal data retrieval. The method leverages hierarchical importance modeling to generate high-quality hash codes that capture significant features across modalities. It has been validated on various benchmark datasets, demonstrating superior performance in terms of retrieval accuracy and efficiency.
 
----
-
-## Features
-
-- **Hierarchical Importance-Aware Modeling**: Effectively captures the importance of different modalities for generating better hash codes.
-- **Multi-Modal Data Retrieval**: Works seamlessly on various modalities, including image and text.
-- **Efficient and Scalable**: Designed for large-scale datasets with minimal computational overhead.
-- **State-of-the-Art Performance**: Achieves competitive results on popular datasets like MIRFlickr, MS COCO, and NUS-WIDE.
-
----
 
 ## Datasets
 
