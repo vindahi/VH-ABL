@@ -1,4 +1,4 @@
-# HIAMH
+# VH-ABL
 
 **Beyond Fixed-Length Constraints: Variable-length Hashing via Adaptive Bit-importance Learning for Multi-modal Retrieval**
 
