@@ -28,6 +28,25 @@ class Fusion(nn.Module):
         return hash_code
 
 
+class BitImportanceNetwork(nn.Module):
+    """轻量级比特重要性评估网络"""
+    def __init__(self, nbit):
+        super(BitImportanceNetwork, self).__init__()
+        self.nbit = nbit
+        # 使用两层全连接网络估计每个比特的重要性
+        self.importance_net = nn.Sequential(
+            nn.Linear(nbit, nbit//2),
+            nn.ReLU(),
+            nn.Linear(nbit//2, nbit)
+        )
+        
+    def forward(self, h):
+        # h shape: [batch_size, nbit]
+        # 输出重要性权重矩阵 w [batch_size, nbit]
+        w = self.importance_net(h)
+        return w
+
+
 class PCH(nn.Module):
     def __init__(self, args):
         super(PCH, self).__init__()
@@ -69,8 +88,13 @@ class PCH(nn.Module):
         nn.init.normal_(self.weight, 0.25, 1/self.nbit)
         self.centroids = nn.Parameter(torch.randn(self.classes, self.nbit)).to(dtype=torch.float32)
         self.classify = nn.Linear(self.nbit, self.classes)
+        
+        # 添加比特重要性评估网络
+        self.bit_importance_net = BitImportanceNetwork(self.nbit)
+        # 存储全局比特重要性排序
+        self.global_bit_ranking = None
 
-    def forward(self, image, text, label):
+    def forward(self, image, text, label, target_length=None):
         self.batch_size = len(image)
         imageH = self.imageMLP(image)
         textH = self.textMLP(text)
@@ -84,7 +108,53 @@ class PCH(nn.Module):
 
         cfeat_concat = self.fusion_layer(fused_fine)    
         code = self.hash_output(cfeat_concat)
-        return code, self.classify(code)
+        
+        if target_length is not None and self.global_bit_ranking is not None:
+            # 使用全局比特重要性排序进行自适应截断
+            selected_indices = self.global_bit_ranking[:target_length]
+            selected_code = code[:, selected_indices]
+            # 对于检索任务，只需要返回截断后的哈希码，不需要分类预测
+            return selected_code, None
+        else:
+            # 返回完整长度的哈希码及分类预测
+            return code, self.classify(code)
+    
+    def compute_global_bit_importance(self, dataloader):
+        """
+        计算全局比特重要性排序
+        """
+        self.eval()
+        total_importance_weights = None
+        count = 0
+        
+        with torch.no_grad():
+            for idx, img_feat, txt_feat, label in dataloader:
+                img_feat = img_feat.cuda()
+                txt_feat = txt_feat.cuda()
+                label = label.cuda()
+                
+                # 获取哈希码（不进行截断）
+                H, _ = self(img_feat, txt_feat, label)
+                
+                # 计算重要性权重
+                W = self.bit_importance_net(H)  # [batch_size, nbit]
+                
+                # 累积重要性权重
+                if total_importance_weights is None:
+                    total_importance_weights = W.sum(dim=0)  # [nbit]
+                else:
+                    total_importance_weights += W.sum(dim=0)
+                
+                count += img_feat.size(0)
+        
+        # 计算全局重要性得分
+        global_scores = total_importance_weights / count
+        
+        # 计算全局比特重要性排序
+        _, sorted_indices = torch.sort(global_scores, descending=True)
+        self.global_bit_ranking = sorted_indices.cpu().numpy()
+        
+        return self.global_bit_ranking
 
 
 class AttentionLayer(nn.Module):
@@ -123,5 +193,3 @@ class AttentionLayer(nn.Module):
         output = self.relu(output)
 
         return output
-
-
