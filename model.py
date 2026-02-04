@@ -29,11 +29,9 @@ class Fusion(nn.Module):
 
 
 class BitImportanceNetwork(nn.Module):
-    """轻量级比特重要性评估网络"""
     def __init__(self, nbit):
         super(BitImportanceNetwork, self).__init__()
         self.nbit = nbit
-        # 使用两层全连接网络估计每个比特的重要性
         self.importance_net = nn.Sequential(
             nn.Linear(nbit, nbit//2),
             nn.ReLU(),
@@ -41,10 +39,6 @@ class BitImportanceNetwork(nn.Module):
         )
         
     def forward(self, h):
-        # h shape: [batch_size, nbit]
-        # 输出重要性权重矩阵 w [batch_size, nbit]
         w = self.importance_net(h)
         return w
-
-
         return output
